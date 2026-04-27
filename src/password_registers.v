@@ -1,13 +1,8 @@
 `timescale 1ns / 1ps
-// ============================================================
-// password_register.v
-// 4-nibble shift register. valid = 1-cycle pulse from keypad.
-// Keys 1,2,3,4 pressed in order → password = 16'h1234
-// ============================================================
 module password_register(
     input        clk,
     input        rst,
-    input        valid,        // 1-cycle pulse directly from keypad_controller
+    input        valid,      
     input  [3:0] key,
     output reg [15:0] password
 );
