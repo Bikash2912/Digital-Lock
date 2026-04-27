@@ -1,57 +1,25 @@
 `timescale 1ns / 1ps
-// ============================================================
-// seg7_display.v  –  Basys3 4-digit 7-segment display
-// 100 MHz clock.
-//
-// BUG FIX — Static AAAA / 1111 on power-on:
-// ─────────────────────────────────────────────────────────────
-// Root cause: seg and an outputs were driven by combinational
-// case statements with no multiplexing refresh clock.
-// Without a refresh counter, all four digit anodes were
-// asserted simultaneously, causing all segments to blend into
-// a static pattern (e.g. AAAA, 1111, or 8888 depending on
-// the uninitialized password bits).
-//
-// Fix:
-//   1. A 18-bit refresh counter divides 100 MHz to ~381 Hz
-//      per digit (4-digit scan = ~95 Hz refresh, flicker-free).
-//   2. Only ONE anode is asserted LOW at a time (active-LOW).
-//   3. In SAVE mode, password nibbles are shown as hex digits.
-//   4. In all other modes (CHECK / idle), display is blanked
-//      by asserting all anodes HIGH (4'b1111).
-//   5. A leading-zero blank: digit positions with value 0
-//      when no entry has started show a dash "-" instead of "0".
-//
-// DISPLAY BEHAVIOUR:
-//   save_en=1 (SAVE mode, password entered) → show 4 hex digits
-//   otherwise                               → blank display
-// ============================================================
 module seg7_display(
     input            clk,
     input            rst,
-    input            save_en,       // pulse when password saved
-    input  [15:0]    password,      // raw 4-nibble password
-    output reg [3:0] an,            // active-LOW anodes
-    output reg [6:0] seg,           // active-LOW segments {G,F,E,D,C,B,A}
-    output           dp             // decimal point — always OFF
+    input            save_en,     
+    input  [15:0]    password,     
+    output reg [3:0] an,            
+    output reg [6:0] seg,           
+    output           dp            
 );
 
-assign dp = 1'b1;   // decimal point off (active-LOW)
+assign dp = 1'b1;   
 
-// ── Refresh counter ───────────────────────────────────────────
-// 18-bit counter: rolls over every 262144 cycles = ~2.62 ms per digit
-// → ~381 Hz per digit, 95 Hz full refresh (well above 60 Hz flicker limit)
 reg [17:0] refresh_cnt;
 always @(posedge clk or posedge rst) begin
     if (rst) refresh_cnt <= 0;
     else     refresh_cnt <= refresh_cnt + 1;
 end
-wire [1:0] digit_sel = refresh_cnt[17:16];  // selects which digit to drive
+wire [1:0] digit_sel = refresh_cnt[17:16];  
 
-// ── Latch password on save_en ─────────────────────────────────
-// Hold the last saved password for display.
 reg [15:0] saved_pw;
-reg        display_active;   // 1 = show saved password
+reg        display_active;  
 
 always @(posedge clk or posedge rst) begin
     if (rst) begin
@@ -75,17 +43,6 @@ always @(*) begin
     endcase
 end
 
-// ── 7-segment decode (active-LOW) ─────────────────────────────
-// Segments: {seg[6]=G, seg[5]=F, seg[4]=E, seg[3]=D,
-//            seg[2]=C, seg[1]=B, seg[0]=A}
-//  Segment layout:
-//      AAA
-//     F   B
-//     F   B
-//      GGG
-//     E   C
-//     E   C
-//      DDD
 function [6:0] hex_to_seg;
     input [3:0] val;
     begin
@@ -111,14 +68,12 @@ function [6:0] hex_to_seg;
     end
 endfunction
 
-// ── Anode and segment drive ───────────────────────────────────
 always @(posedge clk or posedge rst) begin
     if (rst) begin
         an  <= 4'b1111;   // all digits OFF
         seg <= 7'b1111111;
     end else begin
         if (display_active) begin
-            // Assert only the selected anode LOW
             case (digit_sel)
                 2'd0: an <= 4'b1110;
                 2'd1: an <= 4'b1101;
@@ -128,11 +83,9 @@ always @(posedge clk or posedge rst) begin
             endcase
             seg <= hex_to_seg(nibble);
         end else begin
-            // Blank display when not in save mode
             an  <= 4'b1111;
             seg <= 7'b1111111;
         end
     end
 end
-
 endmodule
