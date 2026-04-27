@@ -1,9 +1,4 @@
 `timescale 1ns / 1ps
-// ============================================================
-// password_storage.v
-// Stores the hashed password.  Only updates on save_en pulse.
-// Default stored value = 0 (no password set after reset).
-// ============================================================
 module password_storage(
     input             clk,
     input             rst,
