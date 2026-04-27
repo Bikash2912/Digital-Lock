@@ -1,8 +1,4 @@
 `timescale 1ns / 1ps
-// control_unit.v
-// Counts 4 keypresses, arms save_en or check_en on button press.
-// mode_sw=1 → SAVE, mode_sw=0 → CHECK
-// Resets on mode change mid-entry.
 module control_unit(
     input      clk, rst,
     input      valid_pulse,
