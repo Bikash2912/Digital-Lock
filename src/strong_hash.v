@@ -1,10 +1,4 @@
 `timescale 1ns / 1ps
-// ============================================================
-// strong_hash.v
-// Combinational 16-bit hash (two-round rotate-XOR-add).
-// Purely combinational — no clock needed.
-// Prevents plain-text password comparison.
-// ============================================================
 module strong_hash(
     input  [15:0] data,
     output [15:0] hash
